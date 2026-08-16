@@ -1,10 +1,8 @@
-name: Atualizar P/L, DY, CRESC e apostas de 2 anos
+name: Atualizar ranking completo diariamente
 on:
   push:
     branches: [main]
-    paths:
-      - 'scripts/**'
-      - '.github/workflows/pages.yml'
+    paths: ['scripts/**','.github/workflows/pages.yml']
   schedule:
     - cron: '20 10 * * *'
   workflow_dispatch:
@@ -20,25 +18,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+        with: {python-version: '3.12'}
       - name: Baixar CVM e B3
         run: python scripts/run.py
-      - name: Atualizar P/L, DY, CRESC e teses
+      - name: Enriquecer indicadores e teses
         run: python scripts/enhance.py
-      - name: Exigir P/L, DY e CRESC
+      - name: Exigir completude de todos os campos exibidos
         run: python scripts/complete_indicators.py
       - name: Calcular apostas usando 2 anos
         run: python scripts/two_year_bets.py
       - name: Atualizar interface para 2 anos
         run: python scripts/update_ui_2y.py
-      - name: Trava contra N/D
-        run: python -c "import json;d=json.load(open('data/ranking.json'));assert len(d['items'])>=10;assert all(x.get('pe') is not None and x.get('dy') is not None and x.get('growth') is not None for x in d['items']);assert d.get('bets_period')=='2 anos';print('PASS:',len(d['items']),'ações com P/L, DY e CRESC; apostas em 2 anos')"
+      - name: Remover campos sem cobertura universal e explicar filtros
+        run: python scripts/finalize_ui.py
+      - name: Auditoria final
+        run: python -c "import json;d=json.load(open('data/ranking.json'));keys=['price','pe','pvp','dy','roe','roic','margin','growth','debt_equity','ev_ebitda','turnover','momentum_2y'];assert len(d['items'])>=10;assert all(all(x.get(k) is not None for k in keys) for x in d['items']);assert d.get('filter_method');print('PASS COMPLETO:',len(d['items']))"
       - name: Publicar ranking e interface
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/ranking.json index.html
-          git diff --cached --quiet || git commit -m 'data: P/L e apostas de 2 anos validados'
+          git diff --cached --quiet || git commit -m 'data: ranking completo sem campos vazios'
           git pull --rebase
           git push
