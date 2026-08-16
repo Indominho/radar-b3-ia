@@ -2,14 +2,14 @@ name: Atualizar catálogo e ranking com brapi + 150 testes
 on:
   push:
     branches: [main]
-    paths: ['scripts/**','tests/**','.github/workflows/pages.yml']
+    paths: ['scripts/**','tests/**','.github/workflows/pages.yml','BRAPI_CHECK']
   schedule:
     - cron: '20 10 * * *'
   workflow_dispatch:
 permissions:
   contents: write
 concurrency:
-  group: market-daily-pipeline-v3
+  group: market-daily-pipeline-v4
   cancel-in-progress: true
 jobs:
   update-test-publish:
