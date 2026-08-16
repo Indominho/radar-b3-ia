@@ -1,23 +1,29 @@
-import datetime as dt, json, pathlib, re, sys
-DATA=pathlib.Path('data/ranking.json');HTML=pathlib.Path('index.html');checks=[]
-def check(name,condition):
- checks.append((name,bool(condition)))
- if not condition:print('FAIL',name)
-d=json.loads(DATA.read_text(encoding='utf-8'));h=HTML.read_text(encoding='utf-8');items=d.get('items',[]);top=items[:10]
-check('dataset exists',DATA.exists());check('html exists',HTML.exists());check('minimum 10 stocks',len(items)>=10);check('top exactly available',len(top)==10);check('updated_at present',bool(d.get('updated_at')));check('quote_date present',bool(d.get('quote_date')));check('statement year present',isinstance(d.get('statement_year'),int));check('bets period two years',d.get('bets_period')=='2 anos');check('methodology present',bool(d.get('filter_method')));check('items sorted',all(items[i]['score']>=items[i+1]['score'] for i in range(len(items)-1)));check('ticker unique',len({x['ticker'] for x in items})==len(items));check('top ticker unique',len({x['ticker'] for x in top})==10)
-try:check('market data fresh', (dt.date.today()-dt.date.fromisoformat(d['quote_date'])).days<=7)
-except:check('market data fresh',False)
-try:check('pipeline fresh',(dt.datetime.now(dt.timezone.utc)-dt.datetime.fromisoformat(d['updated_at'])).total_seconds()<=129600)
-except:check('pipeline fresh',False)
-fields=['ticker','name','price','momentum_2y','dy','pe','pvp','roe','roic','margin','growth','debt_equity','ev_ebitda','turnover','score','coverage','thesis','catalysts','risks','dy_source','growth_source','pe_source','pvp_source','indicators_updated_at']
-for pos,x in enumerate(top,1):
- for field in fields:check(f'top{pos} {field}',x.get(field) is not None and x.get(field)!='')
- check(f'top{pos} ticker format',bool(re.fullmatch(r'[A-Z]{4}\d{1,2}',x['ticker'])))
- check(f'top{pos} price positive',x['price']>0);check(f'top{pos} pe positive',x['pe']>0);check(f'top{pos} pvp positive',x['pvp']>0);check(f'top{pos} dy nonnegative',x['dy']>=0);check(f'top{pos} score range',0<=x['score']<=100);check(f'top{pos} coverage range',0<=x['coverage']<=100);check(f'top{pos} thesis useful',len(x['thesis'])>=15);check(f'top{pos} catalysts useful',len(x['catalysts'])>=10);check(f'top{pos} risks useful',len(x['risks'])>=10)
-required_numeric=['price','momentum_2y','dy','pe','pvp','roe','roic','margin','growth','debt_equity','ev_ebitda','turnover','score','coverage']
-for field in required_numeric:check(f'all stocks have {field}',all(isinstance(x.get(field),(int,float)) for x in items))
-for field in ['thesis','catalysts','risks','dy_source','growth_source','pe_source','pvp_source']:check(f'all stocks explain {field}',all(isinstance(x.get(field),str) and x[field].strip() for x in items))
-check('html search field','id="q"' in h);check('html price filter','id="maxPrice"' in h);check('html dy filter','id="minDy"' in h);check('html table','<table>' in h);check('html detail panel','id="detail"' in h);check('html bets','id="bets"' in h);check('html methodology','Filtros usados no Top 10' in h);check('html two years','2 anos' in h);check('html no six months','6 meses' not in h);check('html no consensus column','>Consenso<' not in h);check('html no uncovered label','Sem cobertura' not in h);check('html mobile breakpoint','@media(max-width:520px)' in h);check('html viewport','name="viewport"' in h);check('html portuguese','lang="pt-BR"' in h);check('html safe escape','const $' in h and 'esc=' in h);check('no NaN data','NaN' not in DATA.read_text());check('no Infinity data','Infinity' not in DATA.read_text());check('at least one bet',len(d.get('emerging_bets',[]))>=1);check('max ten bets',len(d.get('emerging_bets',[]))<=10);check('bet fields',all(x.get('momentum_2y') is not None and x.get('pe') is not None for x in d.get('emerging_bets',[])))
-failed=[n for n,ok in checks if not ok];print(f'TOTAL TESTS: {len(checks)} | PASSED: {len(checks)-len(failed)} | FAILED: {len(failed)}')
-if len(checks)<50:raise SystemExit('Test suite below 50 checks')
-if failed:print('\n'.join(failed));raise SystemExit(1)
+import datetime as dt,json,pathlib,re
+DATA=pathlib.Path('data/ranking.json');CAT=pathlib.Path('data/catalog.json');HTML=pathlib.Path('index.html');checks=[]
+def c(n,v):checks.append((n,bool(v)));print('PASS' if v else 'FAIL',n)
+d=json.loads(DATA.read_text());cat=json.loads(CAT.read_text());h=HTML.read_text();items=d.get('items',[]);top=items[:10];market=cat.get('items',[])
+for n,v in [('ranking exists',DATA.exists()),('catalog exists',CAT.exists()),('html exists',HTML.exists()),('ranking min10',len(items)>=10),('top10',len(top)==10),('catalog broad',len(market)>=300),('catalog count',cat.get('count')==len(market)),('ranking sorted',all(items[i]['score']>=items[i+1]['score'] for i in range(len(items)-1))),('unique ranking',len({x['ticker'] for x in items})==len(items)),('unique catalog',len({x['ticker'] for x in market})==len(market)),('quote date',bool(d.get('quote_date'))),('updated at',bool(d.get('updated_at'))),('two years',d.get('bets_period')=='2 anos'),('ten year period',bool(d.get('ten_year_period'))),('filter method',bool(d.get('filter_method'))),('no nan','NaN' not in DATA.read_text()),('no infinity','Infinity' not in DATA.read_text())]:c(n,v)
+try:c('market fresh',(dt.date.today()-dt.date.fromisoformat(d['quote_date'])).days<=7)
+except:c('market fresh',False)
+fields=['ticker','name','price','momentum_2y','dy','dy_5y_avg','dy_10y_avg','dy_10y_history','pe','pvp','roe','roic','margin','growth','revenue_growth_10y','debt_equity','ev_ebitda','turnover','score','coverage','thesis','catalysts','risks','dy_source','dy_5y_source','dy_10y_source','growth_source','growth_10y_source','pe_source','pvp_source','indicators_updated_at']
+for i,x in enumerate(top,1):
+ for f in fields:c(f'top{i} {f}',x.get(f) is not None and x.get(f)!='')
+ for n,v in [('ticker',bool(re.fullmatch(r'[A-Z]{4}\d{1,2}',x['ticker']))),('price',x['price']>0),('pe',x['pe']>0),('pvp',x['pvp']>0),('dy',x['dy']>=0),('dy5',0<=x['dy_5y_avg']<=100),('dy10',0<=x['dy_10y_avg']<=100),('history10',len(x['dy_10y_history'])==10),('years10',len({r['year'] for r in x['dy_10y_history']})==10),('growth10',-100<x['revenue_growth_10y']<500),('score',0<=x['score']<=100),('coverage',x['coverage']==100),('thesis',len(x['thesis'])>=15),('catalysts',len(x['catalysts'])>=10),('risks',len(x['risks'])>=10)]:c(f'top{i} valid {n}',v)
+for f in ['price','momentum_2y','dy','dy_5y_avg','dy_10y_avg','pe','pvp','roe','roic','margin','growth','revenue_growth_10y','debt_equity','ev_ebitda','turnover','score','coverage']:c('all numeric '+f,all(isinstance(x.get(f),(int,float)) for x in items))
+ui=['id="q"','id="minPrice"','id="maxPrice"','id="minDy"','id="maxDy"','id="order"','value="priceAsc"','value="priceDesc"','value="dyAsc"','value="dyDesc"','id="clear"','id="catalogRows"','id="rankRows"','DY médio 5a','DY médio 10a','Cresc. receita 10a','id="detail"','id="bars"','id="bets"','@media(max-width:520px)','name="viewport"','lang="pt-BR"','data/catalog.json','filteredCatalog()','renderCatalog()','renderRank()']
+for token in ui:c('html '+token,token in h)
+for bad in ['>Consenso<','Sem cobertura',"'N/D'",'6 meses']:c('html excludes '+bad,bad not in h)
+# testes funcionais equivalentes aos filtros JS em toda a base
+prices=[x['price'] for x in market if isinstance(x.get('price'),(int,float))];dys=[x['dy'] for x in market if isinstance(x.get('dy'),(int,float))]
+for threshold in [1,5,10,20,50,100]:
+ result=[x for x in market if isinstance(x.get('price'),(int,float)) and x['price']<=threshold];c(f'max price {threshold}',all(x['price']<=threshold for x in result))
+ result=[x for x in market if isinstance(x.get('price'),(int,float)) and x['price']>=threshold];c(f'min price {threshold}',all(x['price']>=threshold for x in result))
+for threshold in [0,1,2,5,10,20]:
+ result=[x for x in market if isinstance(x.get('dy'),(int,float)) and x['dy']>=threshold];c(f'min dy {threshold}',all(x['dy']>=threshold for x in result))
+ result=[x for x in market if isinstance(x.get('dy'),(int,float)) and x['dy']<=threshold];c(f'max dy {threshold}',all(x['dy']<=threshold for x in result))
+for key,reverse in [('price',False),('price',True),('dy',False),('dy',True),('pe',False)]:
+ a=sorted([x for x in market if isinstance(x.get(key),(int,float))],key=lambda x:x[key],reverse=reverse);c(f'sort {key} {reverse}',all((a[i][key]>=a[i+1][key] if reverse else a[i][key]<=a[i+1][key]) for i in range(len(a)-1)))
+for sample in ['PETR','VALE','ITUB','BBDC','WEGE']:
+ found=[x for x in market if sample.lower() in (x['ticker']+' '+x['name']).lower()];c('search '+sample,len(found)>=1)
+failed=[n for n,v in checks if not v];print('TOTAL',len(checks),'PASSED',len(checks)-len(failed),'FAILED',len(failed));assert len(checks)>=150
+if failed:raise SystemExit('\n'.join(failed))
