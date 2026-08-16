@@ -1,0 +1,38 @@
+name: Correção imediata de carregamento
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/hotfix.yml','scripts/hotfix_fallback.py']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: hotfix-ui
+  cancel-in-progress: true
+jobs:
+  hotfix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python scripts/hotfix_fallback.py
+      - name: Testar fallback e filtros
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text()
+          checks=['Modo resiliente','id="minPrice"','id="maxPrice"','id="minDy"','id="maxDy"','priceAsc','priceDesc','dyAsc','dyDesc','renderCatalog()','renderRank()']
+          assert all(x in s for x in checks)
+          assert 'Promise.all' not in s
+          print('HOTFIX PASS',len(checks)+1)
+          PY
+      - name: Publicar
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'fix: carregar ranking mesmo sem catálogo'
+          git pull --rebase
+          git push
