@@ -1,4 +1,4 @@
-name: Atualizar dados públicos CVM, B3 e mercado
+name: Atualizar DY, CRESC, CVM e B3 diariamente
 on:
   push:
     branches: [main]
@@ -6,13 +6,13 @@ on:
       - 'scripts/**'
       - '.github/workflows/pages.yml'
   schedule:
-    - cron: '20 10 * * 1-5'
+    - cron: '20 10 * * *'
   workflow_dispatch:
 permissions:
   contents: write
 concurrency:
   group: cvm-daily-pipeline
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -24,13 +24,15 @@ jobs:
           python-version: '3.12'
       - name: Baixar CVM e B3
         run: python scripts/run.py
-      - name: Enriquecer indicadores, momentum e teses
+      - name: Atualizar DY, CRESC, momentum e teses
         run: python scripts/enhance.py
-      - name: Publicar ranking no repositório
+      - name: Validar cobertura obrigatória
+        run: python -c "import json;d=json.load(open('data/ranking.json'));assert len(d['items'])>=10;assert all(x.get('dy') is not None and x.get('growth') is not None for x in d['items']);print('PASS:',len(d['items']),'ações sem N/D em DY/CRESC')"
+      - name: Publicar ranking
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/ranking.json
-          git diff --cached --quiet || git commit -m 'data: ranking diário enriquecido'
+          git diff --cached --quiet || git commit -m 'data: DY e CRESC diário validado'
           git pull --rebase
           git push
