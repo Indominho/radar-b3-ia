@@ -1,4 +1,4 @@
-name: Atualizar catálogo e ranking com 150+ testes
+name: Atualizar catálogo e ranking com brapi + 150 testes
 on:
   push:
     branches: [main]
@@ -9,16 +9,20 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: market-daily-pipeline-v2
+  group: market-daily-pipeline-v3
   cancel-in-progress: true
 jobs:
   update-test-publish:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      BRAPI_TOKEN: ${{ secrets.BRAPI_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
+      - name: Verificar conexão brapi
+        run: python scripts/verify_brapi.py
       - name: Criar catálogo de todas as ações
         run: python scripts/build_catalog.py
       - name: Baixar CVM e B3
@@ -39,7 +43,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/ranking.json data/catalog.json
-          git diff --cached --quiet || git commit -m 'data: catálogo e ranking aprovados por 150+ testes'
+          git add data/ranking.json data/catalog.json data/brapi-status.json
+          git diff --cached --quiet || git commit -m 'data: brapi conectada e release validada'
           git pull --rebase
           git push
