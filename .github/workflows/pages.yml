@@ -1,8 +1,8 @@
-name: Atualizar ranking completo diariamente
+name: Atualizar e testar ranking completo diariamente
 on:
   push:
     branches: [main]
-    paths: ['scripts/**','.github/workflows/pages.yml']
+    paths: ['scripts/**','tests/**','.github/workflows/pages.yml']
   schedule:
     - cron: '20 10 * * *'
   workflow_dispatch:
@@ -12,7 +12,7 @@ concurrency:
   group: cvm-daily-pipeline
   cancel-in-progress: true
 jobs:
-  update:
+  update-test-publish:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -31,13 +31,13 @@ jobs:
         run: python scripts/update_ui_2y.py
       - name: Remover campos sem cobertura universal e explicar filtros
         run: python scripts/finalize_ui.py
-      - name: Auditoria final
-        run: python -c "import json;d=json.load(open('data/ranking.json'));keys=['price','pe','pvp','dy','roe','roic','margin','growth','debt_equity','ev_ebitda','turnover','momentum_2y'];assert len(d['items'])>=10;assert all(all(x.get(k) is not None for k in keys) for x in d['items']);assert d.get('filter_method');print('PASS COMPLETO:',len(d['items']))"
-      - name: Publicar ranking e interface
+      - name: Rodar suíte com mais de 50 testes
+        run: python tests/validate_release.py
+      - name: Publicar somente após todos os testes
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/ranking.json index.html
-          git diff --cached --quiet || git commit -m 'data: ranking completo sem campos vazios'
+          git diff --cached --quiet || git commit -m 'data: release aprovada pela suíte completa'
           git pull --rebase
           git push
