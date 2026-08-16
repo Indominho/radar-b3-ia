@@ -1,6 +1,6 @@
 import csv, datetime as dt, io, json, pathlib, time, urllib.request, zipfile
 P=pathlib.Path('data/ranking.json');D=json.loads(P.read_text(encoding='utf-8'));items=D.get('items',[]);tickers={x['ticker'] for x in items};now=dt.date.today();end_year=now.year-1;start_year=end_year-9
-HEAD={'User-Agent':'Mozilla/5.0 radar-b3-ia/4.1','Accept-Language':'pt-BR,pt;q=0.9'}
+HEAD={'User-Agent':'Mozilla/5.0 radar-b3-ia/4.2','Accept-Language':'pt-BR,pt;q=0.9'}
 def get(url,timeout=240):
  last=None
  for delay in (0,4,12):
@@ -14,6 +14,7 @@ def parse_num(v):
  if v is None or v=='':return None
  try:return float(str(v).replace('.','').replace(',','.'))
  except:return None
+def cvm(v):return str(v or '').strip().zfill(6)
 closes={t:{} for t in tickers}
 for year in range(start_year,end_year+1):
  raw=get(f'https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A{year}.ZIP')
@@ -27,8 +28,7 @@ for year in range(start_year,end_year+1):
    old=closes[ticker].get(year)
    if old is None or day>old[0]:closes[ticker][year]=(day,price)
 def dividends(ticker):
- url=f'https://statusinvest.com.br/acao/companytickerprovents?ticker={ticker}&chartProventsType=2'
- try:data=json.loads(get(url,90).decode('utf-8'));events=data.get('assetEarningsModels',[])
+ try:data=json.loads(get(f'https://statusinvest.com.br/acao/companytickerprovents?ticker={ticker}&chartProventsType=2',90).decode());events=data.get('assetEarningsModels',[])
  except Exception as e:print('proventos falharam',ticker,e);return None
  annual={y:0.0 for y in range(start_year,end_year+1)}
  for e in events:
@@ -42,14 +42,14 @@ def historical_revenue(year):
   name=next(n for n in z.namelist() if 'DRE_con' in n and n.endswith('.csv'))
   for r in csv.DictReader(io.TextIOWrapper(z.open(name),encoding='latin-1'),delimiter=';'):
    if r.get('CD_CONTA')!='3.01' or r.get('ORDEM_EXERC') not in ('ÚLTIMO','ULTIMO'):continue
-   cd=r.get('CD_CVM');value=parse_num(r.get('VL_CONTA'));version=int(parse_num(r.get('VERSAO')) or 0);date=r.get('DT_REFER') or ''
+   cd=cvm(r.get('CD_CVM'));value=parse_num(r.get('VL_CONTA'));version=int(parse_num(r.get('VERSAO')) or 0);date=r.get('DT_REFER') or ''
    if value is None:continue
    value*=1000 if 'MIL' in (r.get('ESCALA_MOEDA') or '').upper() else 1
    if cd not in out or (date,version)>out[cd][:2]:out[cd]=(date,version,value)
  return {k:v[2] for k,v in out.items()}
 old_revenue=historical_revenue(start_year);kept=[]
 for x in items:
- annual=dividends(x['ticker']);prices=closes.get(x['ticker'],{});base=old_revenue.get(x.get('cvm_code'));current=x.get('revenue')
+ annual=dividends(x['ticker']);prices=closes.get(x['ticker'],{});base=old_revenue.get(cvm(x.get('cvm_code')));current=x.get('revenue')
  if annual is None or len(prices)!=10 or base is None or current is None or base<=0 or current<=0:continue
  yields=[];history=[]
  for year in range(start_year,end_year+1):
@@ -57,8 +57,7 @@ for x in items:
   if dy is None:break
   yields.append(dy);history.append({'year':year,'dividends_per_share':round(paid,8),'year_end_price':round(close,4),'dy':round(dy,4)})
  if len(yields)!=10:continue
- x['dy_10y_avg']=sum(yields)/10;x['dy_5y_avg']=sum(yields[-5:])/5;x['dy_10y_history']=history;x['revenue_growth_10y']=((current/base)**(1/10)-1)*100;x['revenue_10y_base']=base;x['revenue_10y_current']=current
- x['dy_10y_source']='StatusInvest proventos por data ex + fechamento anual COTAHIST/B3';x['dy_5y_source']='StatusInvest proventos por data ex + fechamento anual COTAHIST/B3, últimos 5 exercícios';x['growth_10y_source']=f'CVM DFP consolidada {start_year} e {end_year}';x['ten_year_period']=f'{start_year}-{end_year}';kept.append(x)
+ x['dy_10y_avg']=sum(yields)/10;x['dy_5y_avg']=sum(yields[-5:])/5;x['dy_10y_history']=history;x['revenue_growth_10y']=((current/base)**(1/10)-1)*100;x['revenue_10y_base']=base;x['revenue_10y_current']=current;x['dy_10y_source']='StatusInvest proventos por data ex + fechamento anual COTAHIST/B3';x['dy_5y_source']='StatusInvest + COTAHIST/B3, últimos 5 exercícios';x['growth_10y_source']=f'CVM DFP consolidada {start_year} e {end_year}';x['ten_year_period']=f'{start_year}-{end_year}';kept.append(x)
 if len(kept)<10:raise RuntimeError(f'Apenas {len(kept)} ações têm série completa de 10 anos')
 D['items']=kept;D['universe_size']=len(kept);D['ten_year_period']=f'{start_year}-{end_year}';D['ten_year_coverage']=len(kept);D['message']=D.get('message','')+f' DY médio de 5 e 10 anos e crescimento de receita em 10 anos completos para {len(kept)} ações.'
-P.write_text(json.dumps(D,ensure_ascii=False,allow_nan=False),encoding='utf-8');print('5 E 10 ANOS PASS',len(kept),start_year,end_year)
+P.write_text(json.dumps(D,ensure_ascii=False,allow_nan=False));print('5 E 10 ANOS PASS',len(kept),start_year,end_year)
