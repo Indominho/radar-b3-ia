@@ -1,6 +1,6 @@
 import csv, datetime as dt, io, json, pathlib, time, urllib.request, zipfile
 P=pathlib.Path('data/ranking.json');D=json.loads(P.read_text(encoding='utf-8'));items=D.get('items',[]);tickers={x['ticker'] for x in items};now=dt.date.today();end_year=now.year-1;start_year=end_year-9
-HEAD={'User-Agent':'Mozilla/5.0 radar-b3-ia/4.2','Accept-Language':'pt-BR,pt;q=0.9'}
+HEAD={'User-Agent':'Mozilla/5.0 radar-b3-ia/4.3','Accept-Language':'pt-BR,pt;q=0.9'}
 def get(url,timeout=240):
  last=None
  for delay in (0,4,12):
@@ -12,7 +12,8 @@ def get(url,timeout=240):
  raise last
 def parse_num(v):
  if v is None or v=='':return None
- try:return float(str(v).replace('.','').replace(',','.'))
+ t=str(v).strip()
+ try:return float(t.replace('.','').replace(',','.')) if ',' in t else float(t)
  except:return None
 def cvm(v):return str(v or '').strip().zfill(6)
 closes={t:{} for t in tickers}
