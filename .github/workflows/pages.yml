@@ -9,7 +9,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: market-daily-pipeline
+  group: market-daily-pipeline-v2
   cancel-in-progress: true
 jobs:
   update-test-publish:
