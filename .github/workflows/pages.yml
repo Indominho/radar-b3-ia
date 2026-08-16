@@ -26,7 +26,9 @@ jobs:
         run: python scripts/run.py
       - name: Atualizar DY, CRESC, momentum e teses
         run: python scripts/enhance.py
-      - name: Validar cobertura obrigatória
+      - name: Completar e validar DY e CRESC
+        run: python scripts/complete_indicators.py
+      - name: Trava contra N/D
         run: python -c "import json;d=json.load(open('data/ranking.json'));assert len(d['items'])>=10;assert all(x.get('dy') is not None and x.get('growth') is not None for x in d['items']);print('PASS:',len(d['items']),'ações sem N/D em DY/CRESC')"
       - name: Publicar ranking
         run: |
