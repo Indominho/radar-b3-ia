@@ -14,7 +14,7 @@ concurrency:
 jobs:
   update-test-publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -27,17 +27,23 @@ jobs:
         run: python scripts/complete_indicators.py
       - name: Calcular apostas usando 2 anos
         run: python scripts/two_year_bets.py
+      - name: Calcular DY médio e crescimento da receita em 10 anos
+        run: python scripts/ten_year_metrics.py
       - name: Atualizar interface para 2 anos
         run: python scripts/update_ui_2y.py
       - name: Remover campos sem cobertura universal e explicar filtros
         run: python scripts/finalize_ui.py
-      - name: Rodar suíte com mais de 50 testes
+      - name: Adicionar indicadores de 10 anos à interface
+        run: python scripts/update_ui_10y.py
+      - name: Rodar suíte geral
         run: python tests/validate_release.py
+      - name: Rodar suíte de 10 anos
+        run: python tests/validate_10y.py
       - name: Publicar somente após todos os testes
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/ranking.json index.html
-          git diff --cached --quiet || git commit -m 'data: release aprovada pela suíte completa'
+          git diff --cached --quiet || git commit -m 'data: DY médio e crescimento de 10 anos validados'
           git pull --rebase
           git push
