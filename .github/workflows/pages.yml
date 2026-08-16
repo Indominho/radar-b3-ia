@@ -1,4 +1,4 @@
-name: Atualizar dados públicos CVM e B3
+name: Atualizar dados públicos CVM, B3 e mercado
 on:
   push:
     branches: [main]
@@ -16,19 +16,21 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Baixar CVM e B3, calcular ranking
+      - name: Baixar CVM e B3
         run: python scripts/run.py
+      - name: Enriquecer indicadores, momentum e teses
+        run: python scripts/enhance.py
       - name: Publicar ranking no repositório
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/ranking.json
-          git diff --cached --quiet || git commit -m 'data: atualização diária CVM e B3'
+          git diff --cached --quiet || git commit -m 'data: ranking diário enriquecido'
           git pull --rebase
           git push
