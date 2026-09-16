@@ -48,17 +48,23 @@ def historical_revenue(year):
    value*=1000 if 'MIL' in (r.get('ESCALA_MOEDA') or '').upper() else 1
    if cd not in out or (date,version)>out[cd][:2]:out[cd]=(date,version,value)
  return {k:v[2] for k,v in out.items()}
-old_revenue=historical_revenue(start_year);kept=[]
+old_revenue=historical_revenue(start_year)
+kept=0
 for x in items:
  annual=dividends(x['ticker']);prices=closes.get(x['ticker'],{});base=old_revenue.get(cvm(x.get('cvm_code')));current=x.get('revenue')
- if annual is None or len(prices)!=10 or base is None or current is None or base<=0 or current<=0:continue
- yields=[];history=[]
- for year in range(start_year,end_year+1):
-  close=prices[year][1];paid=annual[year];dy=paid/close*100 if close>0 else None
-  if dy is None:break
-  yields.append(dy);history.append({'year':year,'dividends_per_share':round(paid,8),'year_end_price':round(close,4),'dy':round(dy,4)})
- if len(yields)!=10:continue
- x['dy_10y_avg']=sum(yields)/10;x['dy_5y_avg']=sum(yields[-5:])/5;x['dy_10y_history']=history;x['revenue_growth_10y']=((current/base)**(1/10)-1)*100;x['revenue_10y_base']=base;x['revenue_10y_current']=current;x['dy_10y_source']='StatusInvest proventos por data ex + fechamento anual COTAHIST/B3';x['dy_5y_source']='StatusInvest + COTAHIST/B3, últimos 5 exercícios';x['growth_10y_source']=f'CVM DFP consolidada {start_year} e {end_year}';x['ten_year_period']=f'{start_year}-{end_year}';kept.append(x)
-if len(kept)<10:raise RuntimeError(f'Apenas {len(kept)} ações têm série completa de 10 anos')
-D['items']=kept;D['universe_size']=len(kept);D['ten_year_period']=f'{start_year}-{end_year}';D['ten_year_coverage']=len(kept);D['message']=D.get('message','')+f' DY médio de 5 e 10 anos e crescimento de receita em 10 anos completos para {len(kept)} ações.'
-P.write_text(json.dumps(D,ensure_ascii=False,allow_nan=False));print('5 E 10 ANOS PASS',len(kept),start_year,end_year)
+ history=[]
+ if annual is not None:
+  for year in range(start_year,end_year+1):
+   if year not in prices:continue
+   close=prices[year][1];paid=annual.get(year,0.0);dy=paid/close*100 if close>0 else None
+   if dy is not None:history.append({'year':year,'dividends_per_share':round(paid,8),'year_end_price':round(close,4),'dy':round(dy,4),'source':'StatusInvest proventos + B3 COTAHIST'})
+ x['dy_10y_history']=history
+ if history:
+  ys=[r['dy'] for r in history];x['dy_10y_avg']=sum(ys)/len(ys);x['dy_5y_avg']=sum(ys[-5:])/len(ys[-5:]);x['dy_10y_source']='StatusInvest + B3 COTAHIST';x['dy_5y_source']='StatusInvest + B3 COTAHIST, últimos anos disponíveis';x['ten_year_period']=f"{history[0]['year']}-{history[-1]['year']}";x['ten_year_years']=len(history);kept+=1
+ else:
+  x['dy_10y_avg']=None;x['dy_5y_avg']=None;x['ten_year_period']='sem histórico publicado';x['ten_year_years']=0
+ if base and current and base>0 and current>0:
+  x['revenue_growth_10y']=((current/base)**(1/10)-1)*100;x['revenue_10y_base']=base;x['revenue_10y_current']=current;x['growth_10y_source']=f'CVM DFP {start_year} e {end_year}'
+ else:x['revenue_growth_10y']=None;x['growth_10y_source']='CVM DFP: histórico não disponível para este ativo'
+D['items']=items;D['universe_size']=len(items);D['ten_year_period']=f'{start_year}-{end_year}';D['ten_year_coverage']=kept;D['message']=D.get('message','')+f' Históricos enriquecidos sem excluir ativos: {kept} com dados anuais, universo preservado em {len(items)}.'
+P.write_text(json.dumps(D,ensure_ascii=False,allow_nan=False));print('HISTÓRICO SEM EXCLUSÃO',len(items),'ativos;',kept,'com histórico')
