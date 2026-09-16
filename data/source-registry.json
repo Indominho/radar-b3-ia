@@ -1,0 +1,13 @@
+{
+  "policy": "Nenhum número é inventado. Cada campo deve apontar para a fonte consultada ou declarar que a fonte não publicou o valor.",
+  "sources": {
+    "b3_cotahist": {"name":"B3 COTAHIST","url":"https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/historico/mercado-a-vista/cotacoes-historicas/","supports":["ticker","price","change","volume","turnover","historical prices"],"authority":"official"},
+    "b3_instruments": {"name":"B3 Lista de Instrumentos Negociáveis","url":"https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/historico/boletins-diarios/pesquisa-por-pregao/pesquisa-por-pregao/","supports":["instrument classification","trading status","market code"],"authority":"official"},
+    "cvm_dfp": {"name":"CVM DFP","url":"https://dados.cvm.gov.br/dataset/cia_aberta-doc-dfp","supports":["balance sheet","income statement","cash flow","equity","revenue","profit","debt"],"authority":"official"},
+    "cvm_itr": {"name":"CVM ITR","url":"https://dados.cvm.gov.br/dataset/cia_aberta-doc-itr","supports":["quarterly balance sheet","quarterly income statement","quarterly cash flow","re-presentations"],"authority":"official"},
+    "cvm_registry": {"name":"CVM Cadastro de Companhias Abertas","url":"https://dados.cvm.gov.br/dados/CIA_ABERTA/CAD/DADOS/cad_cia_aberta.csv","supports":["issuer name","CVM code","registration status","registration date"],"authority":"official"},
+    "brapi": {"name":"brapi","url":"https://brapi.dev/docs","supports":["catalog","quote snapshot","market cap"],"authority":"secondary_api","note":"Delayed public API; used only as complement to official sources."},
+    "fundamentus": {"name":"Fundamentus","url":"https://www.fundamentus.com.br/","supports":["P/L","P/VP","DY","ROE","ROIC","margins","debt","revenue CAGR"],"authority":"secondary_public","note":"Used as a cross-check, not as a substitute for CVM filings."},
+    "statusinvest": {"name":"Status Invest","url":"https://statusinvest.com.br/","supports":["market indicators","dividend history","historical indicator views"],"authority":"secondary_public","note":"No official public API confirmed; do not silently scrape it as an authoritative API."}
+  }
+}
