@@ -5,24 +5,27 @@ d=json.loads(P.read_text(encoding='utf-8'))
 items=d.get('items',[])
 
 for x in items:
-    hist=sorted(x.get('dy_10y_history',[]),key=lambda r:r['year'])[-6:]
-    if len(hist)>=6 and hist[0].get('year_end_price',0)>0 and hist[-1].get('year_end_price',0)>0:
-        years=hist[-1]['year']-hist[0]['year']
-        x['price_cagr_5y']=((hist[-1]['year_end_price']/hist[0]['year_end_price'])**(1/years)-1)*100 if years>0 else None
-        x['price_return_5y']=(hist[-1]['year_end_price']/hist[0]['year_end_price']-1)*100
-        x['price_5y_from']=hist[0]['year_end_price'];x['price_5y_to']=hist[-1]['year_end_price']
-    else:
-        x['price_cagr_5y']=None;x['price_return_5y']=None
-    x['passes_income_5y']=isinstance(x.get('dy_5y_avg'),(int,float))
-    x['passes_appreciation_5y']=isinstance(x.get('price_cagr_5y'),(int,float))
-    x['passes_5y_strategy']=x['passes_income_5y'] and x['passes_appreciation_5y']
-    if x['passes_5y_strategy']:
+    hist=sorted(x.get('dy_10y_history') or [], key=lambda r:r.get('year',0))
+    usable=[r for r in hist if isinstance(r.get('year_end_price'),(int,float)) and r.get('year_end_price')>0 and isinstance(r.get('dy'),(int,float))]
+    if len(usable)>=2:
+        period=usable[-5:]
+        first,last=period[0],period[-1]
+        years=last['year']-first['year']
+        x['dy_5y_avg']=sum(r['dy'] for r in period)/len(period)
+        x['dy_5y_years']=len(period)
+        x['dy_5y_period']=f"{first['year']}-{last['year']}"
+        x['price_cagr_5y']=((last['year_end_price']/first['year_end_price'])**(1/years)-1)*100 if years>0 else 0.0
+        x['price_return_5y']=(last['year_end_price']/first['year_end_price']-1)*100
+        x['price_5y_from']=first['year_end_price'];x['price_5y_to']=last['year_end_price']
+        x['passes_5y_strategy']=True
         x['five_year_combo_score']=round(min(max(x['dy_5y_avg'],0),40)/40*50+min(max(x['price_cagr_5y'],0),40)/40*50,1)
+    else:
+        x['dy_5y_avg']=None;x['dy_5y_years']=len(usable);x['dy_5y_period']='histórico insuficiente';x['price_cagr_5y']=None;x['price_return_5y']=None;x['passes_5y_strategy']=False
 
 ranked=[x for x in items if x.get('passes_5y_strategy')]
 ranked.sort(key=lambda x:(x.get('dy_5y_avg',float('-inf')),x.get('price_cagr_5y',float('-inf'))),reverse=True)
-d['five_year_strategy']={'dy_5y_min':None,'price_cagr_5y_min':None,'definition':'Todos os ativos com histórico de DY médio e valorização média anual de 5 anos disponível; sem corte mínimo de DY. Ordenação: DY médio 5a decrescente, valorização 5a decrescente.','eligible_count':len(ranked)}
+d['five_year_strategy']={'dy_5y_min':None,'price_cagr_5y_min':None,'definition':'Sem corte mínimo de DY; calcula a média dos últimos até 5 anos observados e exibe o período real de cada ativo.','eligible_count':len(ranked)}
 d['five_year_picks']=ranked
-d['message']=d.get('message','')+f' Ranking 5 anos sem corte de DY: {len(ranked)} ações, ordenadas por DY médio e valorização.'
+d['message']=d.get('message','')+f' Ranking 5 anos corrigido: {len(ranked)} ações com pelo menos 2 exercícios observados.'
 P.write_text(json.dumps(d,ensure_ascii=False,allow_nan=False),encoding='utf-8')
-print('RANKING 5 ANOS SEM CORTE',len(ranked))
+print('RANKING 5 ANOS CORRIGIDO',len(ranked))
