@@ -1,4 +1,4 @@
-name: Atualizar catálogo e ranking com brapi + 150 testes
+name: Atualizar catálogo e rankings com brapi
 on:
   push:
     branches: [main]
@@ -9,12 +9,12 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: market-daily-pipeline-v4
+  group: market-daily-pipeline-v5
   cancel-in-progress: true
 jobs:
   update-test-publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 65
     env:
       BRAPI_TOKEN: ${{ secrets.BRAPI_TOKEN }}
     steps:
@@ -33,17 +33,21 @@ jobs:
         run: python scripts/complete_indicators.py
       - name: Calcular apostas usando 2 anos
         run: python scripts/two_year_bets.py
-      - name: Calcular DY médio 5a e 10a e crescimento 10a
+      - name: Calcular históricos de 5 e 10 anos
         run: python scripts/ten_year_metrics.py
-      - name: Rodar suíte com mais de 150 testes
-        run: python tests/validate_release.py
-      - name: Rodar suíte histórica de 10 anos
-        run: python tests/validate_10y.py
+      - name: Aplicar DY médio e valorização alta em 5 anos
+        run: python scripts/five_year_strategy.py
+      - name: Inserir ranking de 5 anos na interface
+        run: python scripts/apply_five_year_ui.py
+      - name: Validar critério combinado
+        run: python -c "import json;d=json.load(open('data/ranking.json'));assert all(x['dy_5y_avg']>=15 and x['price_cagr_5y']>=10 for x in d['five_year_picks']);assert d['five_year_strategy']['dy_5y_min']==15;print('5Y PASS',len(d['five_year_picks']))"
+      - name: Rodar suítes gerais
+        run: python tests/validate_release.py && python tests/validate_10y.py
       - name: Publicar somente após todos os testes
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/ranking.json data/catalog.json data/brapi-status.json
-          git diff --cached --quiet || git commit -m 'data: brapi conectada e release validada'
+          git add data/ranking.json data/catalog.json data/brapi-status.json index.html
+          git diff --cached --quiet || git commit -m 'data: estratégia 5 anos validada'
           git pull --rebase
           git push
