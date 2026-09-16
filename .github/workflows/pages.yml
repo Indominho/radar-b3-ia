@@ -4,7 +4,7 @@ on:
     branches: [main]
     paths: ['scripts/**','tests/**','.github/workflows/pages.yml','BRAPI_CHECK']
   schedule:
-    - cron: '20 10 * * *'
+    - cron: '20 */2 * * *'
   workflow_dispatch:
 permissions:
   contents: write
