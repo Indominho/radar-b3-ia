@@ -2,14 +2,14 @@ name: Atualizar catálogo e rankings com brapi
 on:
   push:
     branches: [main]
-    paths: ['index.html','scripts/**','tests/**','data/source-registry.json','.github/workflows/pages.yml','BRAPI_CHECK']
+    paths: ['index.html','scripts/**','tests/**','data/source-registry.json','.github/workflows/pages.yml','BRAPI_CHECK','VERSION.json']
   schedule:
     - cron: '20 */2 * * *'
   workflow_dispatch:
 permissions:
   contents: write
 concurrency:
-  group: market-daily-pipeline-v5
+  group: market-pipeline-v1-0-2
   cancel-in-progress: true
 jobs:
   update-test-publish:
@@ -21,45 +21,23 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - name: Verificar conexão brapi
-        run: python scripts/verify_brapi.py
-      - name: Criar catálogo de todas as ações
-        run: python scripts/build_catalog.py
-      - name: Baixar CVM e B3
-        run: python scripts/run.py
-      - name: Enriquecer indicadores e teses
-        run: python scripts/enhance.py
-      - name: Exigir completude do ranking
-        run: python scripts/complete_indicators.py
-      - name: Calcular apostas usando 2 anos
-        run: python scripts/two_year_bets.py
-      - name: Calcular históricos de 5 e 10 anos
-        run: python scripts/ten_year_metrics.py
-      - name: Ordenar renda e valorização dos últimos 5 anos
-        run: python scripts/five_year_strategy.py
-      - name: Calcular indicadores anuais e médias possíveis
-        run: python scripts/annual_indicator_engine.py
-      - name: Inserir ranking de 5 anos na interface
-        run: python scripts/apply_five_year_ui.py
-      - name: Separar Top 10 fundamentalista do ranking histórico
-        run: python scripts/fix_ui_cards.py
-      - name: Auditar cada ação e registrar cobertura
-        run: python scripts/audit_universe.py
-      - name: Remover campos vazios da interface
-        run: python scripts/normalize_ui.py
-      - name: Validador 2, conferir fórmulas e médias
-        run: python scripts/validate_annual_indicators.py
-      - name: Validador 3, recomputar independentemente
-        run: python scripts/meta_validate_annual.py
-      - name: Validar ranking sem corte mínimo
-        run: python -c "import json;d=json.load(open('data/ranking.json'));a=d.get('five_year_picks',[]);assert d['five_year_strategy']['dy_5y_min'] is None;assert d['five_year_strategy']['price_cagr_5y_min'] is None;assert all((a[i].get('dy_5y_avg'),a[i].get('price_cagr_5y')) >= (a[i+1].get('dy_5y_avg'),a[i+1].get('price_cagr_5y')) for i in range(len(a)-1));print('5Y RANKING PASS',len(a))"
-      - name: Rodar suítes gerais, auditoria e 50 testes
-        run: python tests/validate_release.py && python tests/validate_10y.py && python tests/validate_universe.py && python tests/validate_random50.py
-      - name: Publicar somente após todos os testes
+      - run: python scripts/verify_brapi.py
+      - run: python scripts/build_catalog.py
+      - run: python scripts/run.py
+      - run: python scripts/enhance.py
+      - run: python scripts/complete_indicators.py
+      - run: python scripts/two_year_bets.py && python scripts/ten_year_metrics.py
+      - run: python scripts/five_year_strategy.py
+      - run: python scripts/annual_indicator_engine.py
+      - run: python scripts/apply_five_year_ui.py && python scripts/fix_ui_cards.py
+      - run: python scripts/audit_universe.py && python scripts/normalize_ui.py
+      - run: python scripts/validate_annual_indicators.py && python scripts/meta_validate_annual.py
+      - run: python tests/validate_release.py && python tests/validate_10y.py && python tests/validate_universe.py && python tests/validate_random50.py
+      - name: Publicar após todos os testes
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/ranking.json data/catalog.json data/brapi-status.json data/universe-audit.json data/source-registry.json index.html VERSION.json
-          git diff --cached --quiet || git commit -m 'release: Radar B3 IA v1.0.2'
+          git diff --cached --quiet || git commit -m 'release: Radar B3 IA v1.0.2 dados universais'
           git pull --rebase
           git push
