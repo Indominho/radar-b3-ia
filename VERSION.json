@@ -3,6 +3,7 @@
   "release": "2026-09-16",
   "name": "Radar B3 IA",
   "scope": "ranking universal de 5 anos, Top 10 com métricas fundamentais, catálogo preservado",
-  "pipeline_commit": "ca52dba43130374ffa3f16e1518e2ba5736197f9",
-  "republished_at": "2026-09-16T23:01:00Z"
+  "pipeline_commit": "dc3620a8c130d50ee094912a4daa76f06b67ae0f",
+  "validation": "workflow de dados manual + deploy oficial Pages",
+  "republished_at": "2026-09-16T23:15:30Z"
 }
