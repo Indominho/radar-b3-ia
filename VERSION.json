@@ -1,7 +1,7 @@
 {
-  "version": "v1.0.0",
+  "version": "v1.0.2",
   "release": "2026-09-16",
   "name": "Radar B3 IA",
-  "scope": "catálogo preservado, históricos opcionais e validação tripla",
-  "commit": "191fdc886ac1477532e4a5b830acc6cd3a0e31a1"
+  "scope": "Top 10 com métricas fundamentais; ranking histórico separado; catálogo preservado",
+  "previous": "v1.0.1"
 }
