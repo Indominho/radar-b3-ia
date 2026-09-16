@@ -35,12 +35,12 @@ jobs:
         run: python scripts/two_year_bets.py
       - name: Calcular históricos de 5 e 10 anos
         run: python scripts/ten_year_metrics.py
-      - name: Aplicar DY médio e valorização alta em 5 anos
+      - name: Ordenar renda e valorização dos últimos 5 anos
         run: python scripts/five_year_strategy.py
       - name: Inserir ranking de 5 anos na interface
         run: python scripts/apply_five_year_ui.py
-      - name: Validar critério combinado
-        run: python -c "import json;d=json.load(open('data/ranking.json'));assert all(x['dy_5y_avg']>=15 and x['price_cagr_5y']>=10 for x in d['five_year_picks']);assert d['five_year_strategy']['dy_5y_min']==15;print('5Y PASS',len(d['five_year_picks']))"
+      - name: Validar ranking sem corte mínimo
+        run: python -c "import json;d=json.load(open('data/ranking.json'));a=d.get('five_year_picks',[]);assert d['five_year_strategy']['dy_5y_min'] is None;assert d['five_year_strategy']['price_cagr_5y_min'] is None;assert all(isinstance(x.get('dy_5y_avg'),(int,float)) and isinstance(x.get('price_cagr_5y'),(int,float)) for x in a);assert all((a[i].get('dy_5y_avg'),a[i].get('price_cagr_5y')) >= (a[i+1].get('dy_5y_avg'),a[i+1].get('price_cagr_5y')) for i in range(len(a)-1));print('5Y RANKING PASS',len(a))"
       - name: Rodar suítes gerais
         run: python tests/validate_release.py && python tests/validate_10y.py
       - name: Publicar somente após todos os testes
@@ -48,6 +48,6 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/ranking.json data/catalog.json data/brapi-status.json index.html
-          git diff --cached --quiet || git commit -m 'data: estratégia 5 anos validada'
+          git diff --cached --quiet || git commit -m 'data: ranking 5 anos por DY e valorizacao'
           git pull --rebase
           git push
