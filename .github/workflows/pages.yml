@@ -2,7 +2,7 @@ name: Atualizar catálogo e rankings com brapi
 on:
   push:
     branches: [main]
-    paths: ['index.html','scripts/**','tests/**','.github/workflows/pages.yml','BRAPI_CHECK']
+    paths: ['index.html','scripts/**','tests/**','data/source-registry.json','.github/workflows/pages.yml','BRAPI_CHECK']
   schedule:
     - cron: '20 */2 * * *'
   workflow_dispatch:
@@ -45,13 +45,13 @@ jobs:
         run: python scripts/normalize_ui.py
       - name: Validar ranking sem corte mínimo
         run: python -c "import json;d=json.load(open('data/ranking.json'));a=d.get('five_year_picks',[]);assert d['five_year_strategy']['dy_5y_min'] is None;assert d['five_year_strategy']['price_cagr_5y_min'] is None;assert all(isinstance(x.get('dy_5y_avg'),(int,float)) and isinstance(x.get('price_cagr_5y'),(int,float)) for x in a);assert all((a[i].get('dy_5y_avg'),a[i].get('price_cagr_5y')) >= (a[i+1].get('dy_5y_avg'),a[i+1].get('price_cagr_5y')) for i in range(len(a)-1));print('5Y RANKING PASS',len(a))"
-      - name: Rodar suítes gerais e auditoria do universo
-        run: python tests/validate_release.py && python tests/validate_10y.py && python tests/validate_universe.py
+      - name: Rodar suítes gerais, auditoria e 50 testes
+        run: python tests/validate_release.py && python tests/validate_10y.py && python tests/validate_universe.py && python tests/validate_random50.py
       - name: Publicar somente após todos os testes
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/ranking.json data/catalog.json data/brapi-status.json data/universe-audit.json index.html
-          git diff --cached --quiet || git commit -m 'test: auditoria completa por ação antes da publicação'
+          git add data/ranking.json data/catalog.json data/brapi-status.json data/universe-audit.json data/source-registry.json index.html
+          git diff --cached --quiet || git commit -m 'test: auditoria completa por ação e 50 verificações'
           git pull --rebase
           git push
