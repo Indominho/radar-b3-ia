@@ -41,6 +41,8 @@ jobs:
         run: python scripts/annual_indicator_engine.py
       - name: Inserir ranking de 5 anos na interface
         run: python scripts/apply_five_year_ui.py
+      - name: Separar Top 10 fundamentalista do ranking histórico
+        run: python scripts/fix_ui_cards.py
       - name: Auditar cada ação e registrar cobertura
         run: python scripts/audit_universe.py
       - name: Remover campos vazios da interface
@@ -57,7 +59,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/ranking.json data/catalog.json data/brapi-status.json data/universe-audit.json data/source-registry.json index.html
-          git diff --cached --quiet || git commit -m 'test: cálculo anual com validação tripla'
+          git add data/ranking.json data/catalog.json data/brapi-status.json data/universe-audit.json data/source-registry.json index.html VERSION.json
+          git diff --cached --quiet || git commit -m 'release: Radar B3 IA v1.0.2'
           git pull --rebase
           git push
