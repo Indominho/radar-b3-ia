@@ -2,7 +2,7 @@ name: Atualizar catálogo e rankings com brapi
 on:
   push:
     branches: [main]
-    paths: ['scripts/**','tests/**','.github/workflows/pages.yml','BRAPI_CHECK']
+    paths: ['index.html','scripts/**','tests/**','.github/workflows/pages.yml','BRAPI_CHECK']
   schedule:
     - cron: '20 */2 * * *'
   workflow_dispatch:
