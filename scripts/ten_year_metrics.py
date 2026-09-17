@@ -1,4 +1,5 @@
 import csv,datetime as dt,io,json,pathlib,time,urllib.request,zipfile
+from concurrent.futures import ThreadPoolExecutor,as_completed
 P=pathlib.Path('data/ranking.json');D=json.loads(P.read_text(encoding='utf-8'));items=D.get('items',[]);tickers={x['ticker'] for x in items};today=dt.date.today();end_year=today.year-1;start_year=end_year-9
 HEAD={'User-Agent':'radar-b3-ia/4.4','Accept-Language':'pt-BR,pt;q=0.9'}
 def get_raw(url,timeout=240,retries=2):
@@ -34,7 +35,7 @@ for year in range(start_year,end_year+1):
     if old is None or day>old[0]:closes[ticker][year]=(day,price)
  except zipfile.BadZipFile: print('ZIP B3 inválido',year)
 def dividends(ticker):
- url=f'https://statusinvest.com.br/acao/companytickerprovents?ticker={ticker}&chartProventsType=2';raw=get_raw(url,90)
+ url=f'https://statusinvest.com.br/acao/companytickerprovents?ticker={ticker}&chartProventsType=2';raw=get_raw(url,30,retries=0)
  if not raw:return None
  try:events=json.loads(raw.decode()).get('assetEarningsModels',[])
  except:return None
@@ -60,8 +61,17 @@ def historical_revenue(year):
  except Exception as e:print('CVM DFP inválido',year,e)
  return {k:v[2] for k,v in out.items()}
 old_revenue=historical_revenue(start_year);kept=0
+dividend_data={}
+workers=min(8,max(1,len(items)))
+with ThreadPoolExecutor(max_workers=workers) as pool:
+ futures={pool.submit(dividends,x['ticker']):x['ticker'] for x in items}
+ for future in as_completed(futures):
+  ticker=futures[future]
+  try:dividend_data[ticker]=future.result()
+  except Exception as exc:
+   print('PROVENTOS INDISPONÍVEIS',ticker,exc);dividend_data[ticker]=None
 for x in items:
- annual=dividends(x['ticker']);prices=closes.get(x['ticker'],{});base=old_revenue.get(cvm(x.get('cvm_code')));current=x.get('revenue');history=[]
+ annual=dividend_data.get(x['ticker']);prices=closes.get(x['ticker'],{});base=old_revenue.get(cvm(x.get('cvm_code')));current=x.get('revenue');history=[]
  if annual is not None:
   for year in range(start_year,end_year+1):
    if year not in prices:continue
