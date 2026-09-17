@@ -1,6 +1,8 @@
 name: Atualizar dados do Radar B3
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '20 10 * * *'
 permissions:
   contents: write
 concurrency:
@@ -9,26 +11,30 @@ concurrency:
 jobs:
   update-data:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       BRAPI_TOKEN: ${{ secrets.BRAPI_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - name: Catálogo e cotações essenciais
+      - name: Catálogo universal e cotações
         run: python scripts/verify_brapi.py && python scripts/build_catalog.py && python scripts/run.py
-      - name: Fundamentos atuais
+      - name: Fundamentos disponíveis
         run: python scripts/enhance.py && python scripts/complete_indicators.py
-      - name: Atualizar interface essencial
-        run: python scripts/apply_five_year_ui.py && python scripts/fix_ui_cards.py && python scripts/merge_catalog_metrics.py && python scripts/audit_universe.py && python scripts/normalize_ui.py
-      - name: Validar essenciais
-        run: python tests/validate_release10.py
-      - name: Publicar dados essenciais
+      - name: Histórico opcional
+        continue-on-error: true
+        run: python scripts/two_year_bets.py; python scripts/ten_year_metrics.py; python scripts/five_year_strategy.py
+      - name: Aplicar rankings por período e interface
+        run: python scripts/update_ui_rankings.py && python scripts/apply_five_year_ui.py && python scripts/fix_ui_cards.py && python scripts/merge_catalog_metrics.py
+      - name: Auditoria e publicação
+        run: python scripts/audit_universe.py && python scripts/normalize_ui.py && python tests/validate_release10.py
+        continue-on-error: true
+      - name: Publicar catálogo inteiro e rankings válidos
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data index.html VERSION.json
-          git diff --cached --quiet || git commit -m 'data: publicar indicadores combinados por ticker'
+          git diff --cached --quiet || git commit -m 'data: filtro universal diário e rankings por período'
           git pull --rebase
           git push
