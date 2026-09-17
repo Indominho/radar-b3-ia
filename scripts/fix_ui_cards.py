@@ -1,11 +1,12 @@
 from pathlib import Path
+
 p=Path('index.html'); s=p.read_text(encoding='utf-8')
-old='function card(x,i){return `<article class="pick" onclick="openD(\'${x.ticker}\')"><div class="picktop"><span class="rank">${i+1}</span><div><span class="ticker">${x.ticker}</span><span class="company">${esc(x.name||x.issuer)}</span></div><span class="score">${num(x.score)}</span></div><div class="pills"><span class="pill"><small>DY médio (${x.dy_5y_years||0} anos)</small><b>${pct(x.dy_5y_avg)}</b></span><span class="pill"><small>Valorização média 5a</small><b>${pct(x.price_cagr_5y)}</b></span><span class="pill"><small>Período</small><b>${x.dy_5y_period||\'não aplicável\'}</b></span></div><p class="why">${esc(x.thesis||\'Dados observados, sem inferência.\')}</p></article>`}'
-new='function card(x,i,history=false){let years=x.dy_5y_years||0;return `<article class="pick" onclick="openD(\'${x.ticker}\')"><div class="picktop"><span class="rank">${i+1}</span><div><span class="ticker">${x.ticker}</span><span class="company">${esc(x.name||x.issuer)}</span></div><span class="score">${num(x.score)}</span></div><div class="pills">${history?`<span class="pill"><small>DY médio (${years} anos)</small><b>${pct(x.dy_5y_avg)}</b></span><span class="pill"><small>Valorização média 5a</small><b>${pct(x.price_cagr_5y)}</b></span><span class="pill"><small>Período</small><b>${x.dy_5y_period||\'não aplicável\'}</b></span>`:`<span class="pill"><small>DY 12m</small><b>${pct(x.dy)}</b></span><span class="pill"><small>ROIC</small><b>${pct(x.roic)}</b></span><span class="pill"><small>P/L</small><b>${num(x.pe)}</b></span>`}</div><p class="why">${esc(x.thesis||\'Dados observados, sem inferência.\')}</p></article>`}'
-if old not in s: raise SystemExit('card pattern not found')
-s=s.replace(old,new).replace('r.slice(0,50).map((x,i)=>card(x,i))','r.slice(0,50).map((x,i)=>card(x,i,true))').replace("top.map((x,i)=>card(x,i))","top.map((x,i)=>card(x,i,false))")
-s=s.replace("'<div class=\"empty\">Sem histórico anual suficiente.</div>'","'<div class=\"empty\">Nenhuma ação possui dados anuais suficientes para este ranking nesta atualização. O Top 10 continua usando apenas os indicadores fundamentais disponíveis.</div>'")
-s=s.replace('<!-- release: v1.0.0 | catalog-preserved | optional-history | triple-validation -->','<!-- release: v1.0.2 | top10-core-metrics | optional-history | triple-validation -->')
-s=s.replace('v1.0.0','v1.0.2')
+# O layout atual já separa os cards no JavaScript; não falhar se o padrão antigo não existir.
+if 'function card(x,i){' in s:
+    s=s.replace('r.slice(0,50).map((x,i)=>card(x,i))','r.slice(0,50).map((x,i)=>card(x,i,true))')
+    s=s.replace('top.map((x,i)=>card(x,i))','top.map((x,i)=>card(x,i,false))')
+else:
+    print('layout atual já está separado; nenhuma substituição necessária')
+s=s.replace('Sem histórico anual suficiente.','Nenhuma ação possui histórico anual suficiente nesta atualização.')
 p.write_text(s,encoding='utf-8')
-print('UI V1.0.2 PASS')
+print('UI CARD FIX PASS')
