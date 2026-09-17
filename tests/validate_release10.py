@@ -1,9 +1,11 @@
 import json, pathlib, re
-from datetime import datetime
 
 root=pathlib.Path('.')
 version=json.loads((root/'VERSION.json').read_text())
-assert version['version']=='v1.0.3'
+html=(root/'index.html').read_text()
+version_name=version.get('version','')
+assert re.fullmatch(r'v\d+\.\d+\.\d+',version_name)
+assert version_name in html
 assert (root/'index.html').exists()
 assert (root/'data/catalog.json').exists()
 assert (root/'data/ranking.json').exists()
@@ -16,5 +18,5 @@ assert all(re.fullmatch(r'[A-Z0-9]{4,7}',x.get('ticker','')) and not x['ticker']
 assert isinstance(rank.get('items'),list) and len(rank['items'])>=10
 assert len({x.get('ticker') for x in rank['items']})==len(rank['items'])
 assert 'NaN' not in (root/'data/ranking.json').read_text() and 'Infinity' not in (root/'data/ranking.json').read_text()
-assert 'data/ranking.json' in (root/'index.html').read_text()
-print('RELEASE10 PASS 10/10')
+assert 'data/ranking.json' in html
+print('RELEASE10 PASS',version_name)
