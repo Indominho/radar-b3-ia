@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/ten_year_metrics.py'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
   schedule:
     - cron: '20 10 * * *'
