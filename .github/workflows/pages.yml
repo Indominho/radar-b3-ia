@@ -1,5 +1,9 @@
 name: Atualizar dados do Radar B3
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/ten_year_metrics.py'
   workflow_dispatch:
   schedule:
     - cron: '20 10 * * *'
@@ -17,7 +21,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: '3.12'}
+        with:
+          python-version: '3.12'
       - name: Catálogo universal e cotações
         run: python scripts/verify_brapi.py && python scripts/build_catalog.py && python scripts/run.py
       - name: Fundamentos disponíveis
