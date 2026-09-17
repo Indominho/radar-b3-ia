@@ -1,9 +1,8 @@
 {
   "version": "v1.0.2",
-  "release": "2026-09-16",
+  "release": "2026-09-17",
   "name": "Radar B3 IA",
-  "scope": "ranking universal de 5 anos, Top 10 com métricas fundamentais, catálogo preservado",
-  "pipeline_commit": "dc3620a8c130d50ee094912a4daa76f06b67ae0f",
-  "validation": "workflow de dados manual + deploy oficial Pages",
-  "republished_at": "2026-09-16T23:15:30Z"
+  "scope": "pipeline separado: essenciais publicados, históricos opcionais",
+  "pipeline_commit": "e616b0fb3dffa59327fa04342b185e837f7cb147",
+  "status": "publicação disparada"
 }
