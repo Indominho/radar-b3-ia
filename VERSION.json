@@ -1,7 +1,8 @@
 {
-  "version": "v1.0.5",
+  "version": "v1.0.6",
   "release": "2026-09-17",
   "name": "Radar B3 IA",
-  "scope": "ficha individual por ação, Top 10 de 5 anos, Top 10 de 10 anos e filtros limpos",
-  "previous": "v1.0.4"
+  "scope": "cruzamento catálogo-ranking por ticker, ficha individual e indicadores na tabela",
+  "previous": "v1.0.5",
+  "status": "publicação disparada"
 }
