@@ -1,0 +1,24 @@
+{
+  "checked_at": "2026-09-17T01:38:38.386028+00:00",
+  "catalog_count": 368,
+  "fundamental_coverage": 81,
+  "quote_only": 287,
+  "errors": [],
+  "policy": {
+    "never_invent": true,
+    "never_blank": true,
+    "missing_value_label": "Não publicado pela fonte para este ativo",
+    "per_asset_checks": [
+      "ticker válido",
+      "nome presente",
+      "sem duplicata",
+      "cotação com valor ou motivo",
+      "cada indicador com valor ou motivo",
+      "fonte identificada com URL"
+    ]
+  },
+  "sources": {
+    "brapi": "https://brapi.dev/docs",
+    "CVM/Fundamentus/Status Invest": "https://dados.cvm.gov.br/dataset/cia_aberta-doc-dfp"
+  }
+}
