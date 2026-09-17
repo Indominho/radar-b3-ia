@@ -21,7 +21,7 @@ jobs:
       - name: Fundamentos atuais
         run: python scripts/enhance.py && python scripts/complete_indicators.py
       - name: Atualizar interface essencial
-        run: python scripts/apply_five_year_ui.py && python scripts/fix_ui_cards.py && python scripts/audit_universe.py && python scripts/normalize_ui.py
+        run: python scripts/apply_five_year_ui.py && python scripts/fix_ui_cards.py && python scripts/merge_catalog_metrics.py && python scripts/audit_universe.py && python scripts/normalize_ui.py
       - name: Validar essenciais
         run: python tests/validate_release10.py
       - name: Publicar dados essenciais
@@ -29,6 +29,6 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data index.html VERSION.json
-          git diff --cached --quiet || git commit -m 'data: publicar essenciais sem aguardar históricos'
+          git diff --cached --quiet || git commit -m 'data: publicar indicadores combinados por ticker'
           git pull --rebase
           git push
