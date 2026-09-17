@@ -9,32 +9,29 @@ concurrency:
 jobs:
   update-data:
     runs-on: ubuntu-latest
-    timeout-minutes: 65
+    timeout-minutes: 25
     env:
       BRAPI_TOKEN: ${{ secrets.BRAPI_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - name: Validar conexão brapi
-        run: python scripts/verify_brapi.py
-      - name: Gerar catálogo preservado
-        run: python scripts/build_catalog.py
-      - name: Processar CVM e B3
-        run: python scripts/run.py
-      - name: Enriquecer indicadores
-        run: python scripts/enhance.py
-      - name: Calcular históricos e ranking universal
-        run: python scripts/two_year_bets.py && python scripts/ten_year_metrics.py && python scripts/five_year_strategy.py && python scripts/annual_indicator_engine.py
-      - name: Atualizar interface
-        run: python scripts/apply_five_year_ui.py && python scripts/fix_ui_cards.py
-      - name: Auditar e validar
-        run: python scripts/audit_universe.py && python scripts/normalize_ui.py && python scripts/validate_annual_indicators.py && python scripts/meta_validate_annual.py
-      - name: Publicar dados validados
+      - name: Catálogo e cotações essenciais
+        run: python scripts/verify_brapi.py && python scripts/build_catalog.py && python scripts/run.py
+      - name: Fundamentos atuais
+        run: python scripts/enhance.py && python scripts/complete_indicators.py
+      - name: Históricos opcionais, não bloquear publicação
+        continue-on-error: true
+        run: python scripts/two_year_bets.py; python scripts/ten_year_metrics.py; python scripts/five_year_strategy.py; python scripts/annual_indicator_engine.py
+      - name: Interface e auditoria
+        run: python scripts/apply_five_year_ui.py && python scripts/fix_ui_cards.py && python scripts/audit_universe.py && python scripts/normalize_ui.py
+      - name: Validações essenciais
+        run: python scripts/validate_annual_indicators.py && python scripts/meta_validate_annual.py
+      - name: Publicar dados válidos mesmo com histórico opcional indisponível
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data index.html VERSION.json
-          git diff --cached --quiet || git commit -m 'data: atualização validada do Radar B3'
+          git diff --cached --quiet || git commit -m 'data: publicar essenciais com históricos opcionais'
           git pull --rebase
           git push
