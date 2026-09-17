@@ -2,8 +2,7 @@
   "version": "v1.0.3",
   "release": "2026-09-17",
   "name": "Radar B3 IA",
-  "scope": "pipeline separado, catálogo preservado, históricos opcionais",
+  "scope": "catálogo, cotações, fundamentos e interface essenciais publicados sem históricos demorados",
   "previous": "v1.0.2",
-  "tests": "10 validações estruturais",
-  "status": "republicação disparada"
+  "status": "publicação disparada"
 }
