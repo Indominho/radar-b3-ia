@@ -4,12 +4,12 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: market-data-manual
+  group: market-data-essential
   cancel-in-progress: true
 jobs:
   update-data:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
     env:
       BRAPI_TOKEN: ${{ secrets.BRAPI_TOKEN }}
     steps:
@@ -20,18 +20,15 @@ jobs:
         run: python scripts/verify_brapi.py && python scripts/build_catalog.py && python scripts/run.py
       - name: Fundamentos atuais
         run: python scripts/enhance.py && python scripts/complete_indicators.py
-      - name: Históricos opcionais
-        continue-on-error: true
-        run: python scripts/two_year_bets.py; python scripts/ten_year_metrics.py; python scripts/five_year_strategy.py; python scripts/annual_indicator_engine.py
-      - name: Atualizar interface compatível
-        run: python scripts/apply_five_year_ui.py && python scripts/fix_ui_cards.py
-      - name: Auditoria e validações
-        run: python scripts/audit_universe.py && python scripts/normalize_ui.py && python scripts/validate_annual_indicators.py && python scripts/meta_validate_annual.py && python tests/validate_release10.py
-      - name: Publicar somente após os testes
+      - name: Atualizar interface essencial
+        run: python scripts/apply_five_year_ui.py && python scripts/fix_ui_cards.py && python scripts/audit_universe.py && python scripts/normalize_ui.py
+      - name: Validar essenciais
+        run: python tests/validate_release10.py
+      - name: Publicar dados essenciais
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data index.html VERSION.json
-          git diff --cached --quiet || git commit -m 'release: Radar B3 IA v1.0.3 corrigida'
+          git diff --cached --quiet || git commit -m 'data: publicar essenciais sem aguardar históricos'
           git pull --rebase
           git push
