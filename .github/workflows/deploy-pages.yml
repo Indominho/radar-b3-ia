@@ -4,6 +4,12 @@ on:
     branches: [main]
     paths: ['index.html','data/**','VERSION.json','.github/workflows/deploy-pages.yml']
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Atualizar dados do Radar B3
+      - Publicar catálogo de ações imediatamente
+      - Correção imediata de carregamento
+    types: [completed]
 permissions:
   contents: read
   pages: write
@@ -13,6 +19,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   deploy:
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     environment:
       name: github-pages
