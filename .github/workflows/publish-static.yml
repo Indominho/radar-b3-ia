@@ -1,8 +1,5 @@
 name: Publicar Radar B3 IA
 on:
-  push:
-    branches: [main]
-    paths: ['index.html','data/**','VERSION.json','.github/workflows/publish-static.yml']
   workflow_dispatch:
 permissions:
   contents: read
