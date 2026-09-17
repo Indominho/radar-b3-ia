@@ -1,16 +1,18 @@
 import csv,datetime as dt,io,json,pathlib,time,urllib.request,zipfile
 P=pathlib.Path('data/ranking.json');D=json.loads(P.read_text(encoding='utf-8'));items=D.get('items',[]);tickers={x['ticker'] for x in items};today=dt.date.today();end_year=today.year-1;start_year=end_year-9
 HEAD={'User-Agent':'radar-b3-ia/4.4','Accept-Language':'pt-BR,pt;q=0.9'}
-def get(url,timeout=240,retries=2):
+def get_raw(url,timeout=240,retries=2):
  for attempt in range(retries+1):
   try:
    req=urllib.request.Request(url,headers=HEAD)
-   with urllib.request.urlopen(req,timeout=timeout) as r: raw=r.read()
-   if not raw.startswith(b'PK'): raise ValueError('resposta não é ZIP')
-   return raw
+   with urllib.request.urlopen(req,timeout=timeout) as r: return r.read()
   except Exception as e:
    if attempt==retries: print('FONTE INDISPONÍVEL',url,e);return None
    time.sleep(3*(attempt+1))
+def get_zip(url,timeout=240,retries=2):
+ raw=get_raw(url,timeout,retries)
+ if raw is not None and not raw.startswith(b'PK'): print('RESPOSTA NÃO ZIP',url);return None
+ return raw
 def parse_num(v):
  try:
   t=str(v or '').strip();return float(t.replace('.','').replace(',','.')) if ',' in t else float(t)
@@ -18,7 +20,7 @@ def parse_num(v):
 def cvm(v):return str(v or '').strip().zfill(6)
 closes={t:{} for t in tickers}
 for year in range(start_year,end_year+1):
- raw=get(f'https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A{year}.ZIP')
+ raw=get_zip(f'https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A{year}.ZIP')
  if not raw:continue
  try:
   with zipfile.ZipFile(io.BytesIO(raw)) as z:
@@ -32,7 +34,7 @@ for year in range(start_year,end_year+1):
     if old is None or day>old[0]:closes[ticker][year]=(day,price)
  except zipfile.BadZipFile: print('ZIP B3 inválido',year)
 def dividends(ticker):
- url=f'https://statusinvest.com.br/acao/companytickerprovents?ticker={ticker}&chartProventsType=2';raw=get(url,90)
+ url=f'https://statusinvest.com.br/acao/companytickerprovents?ticker={ticker}&chartProventsType=2';raw=get_raw(url,90)
  if not raw:return None
  try:events=json.loads(raw.decode()).get('assetEarningsModels',[])
  except:return None
@@ -43,7 +45,7 @@ def dividends(ticker):
   if day.year in annual and value>=0:annual[day.year]+=value
  return annual
 def historical_revenue(year):
- raw=get(f'https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_{year}.zip');out={}
+ raw=get_zip(f'https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_{year}.zip');out={}
  if not raw:return out
  try:
   with zipfile.ZipFile(io.BytesIO(raw)) as z:
