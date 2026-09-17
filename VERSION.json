@@ -1,8 +1,9 @@
 {
-  "version": "v1.0.2",
+  "version": "v1.0.3",
   "release": "2026-09-17",
   "name": "Radar B3 IA",
-  "scope": "pipeline separado: essenciais publicados, históricos opcionais",
-  "pipeline_commit": "e616b0fb3dffa59327fa04342b185e837f7cb147",
-  "status": "publicação disparada"
+  "scope": "pipeline separado, catálogo preservado, históricos opcionais",
+  "previous": "v1.0.2",
+  "tests": "10 validações estruturais",
+  "status": "republicação disparada"
 }
