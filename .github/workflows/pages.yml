@@ -23,7 +23,7 @@ jobs:
       - name: Históricos opcionais
         continue-on-error: true
         run: python scripts/two_year_bets.py; python scripts/ten_year_metrics.py; python scripts/five_year_strategy.py; python scripts/annual_indicator_engine.py
-      - name: Atualizar interface
+      - name: Atualizar interface compatível
         run: python scripts/apply_five_year_ui.py && python scripts/fix_ui_cards.py
       - name: Auditoria e validações
         run: python scripts/audit_universe.py && python scripts/normalize_ui.py && python scripts/validate_annual_indicators.py && python scripts/meta_validate_annual.py && python tests/validate_release10.py
@@ -32,6 +32,6 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data index.html VERSION.json
-          git diff --cached --quiet || git commit -m 'release: Radar B3 IA v1.0.3'
+          git diff --cached --quiet || git commit -m 'release: Radar B3 IA v1.0.3 corrigida'
           git pull --rebase
           git push
