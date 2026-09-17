@@ -2,7 +2,7 @@
   "version": "v1.0.7",
   "release": "2026-09-17",
   "name": "Radar B3 IA",
-  "scope": "Top 5 anos e Top 10 anos separados; catálogo completo atualizado diariamente",
+  "scope": "Top 5 anos e Top 10 anos sem fallback entre períodos; catálogo completo diário",
   "previous": "v1.0.6",
-  "status": "publicação disparada"
+  "status": "correção publicada no repositório"
 }
