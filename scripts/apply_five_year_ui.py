@@ -16,5 +16,6 @@ if '<section class="panel"><h2>Top 10 de longo prazo' in s and 'id="fiveYearRows
     s=s.replace(anchor,block+anchor)
 
 p.write_text(s,encoding='utf-8')
-assert 'Ranking de 5 anos' in s or 'Ranking 5 anos' in s
+markers=('Ranking de 5 anos','Ranking 5 anos','Top 5 anos')
+assert any(marker in s for marker in markers), 'marcador do ranking de 5 anos ausente'
 print('UI ranking 5 anos pronta')
