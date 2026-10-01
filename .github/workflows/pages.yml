@@ -8,6 +8,7 @@ on:
       - 'scripts/apply_five_year_ui.py'
       - 'scripts/fix_ui_cards.py'
       - 'scripts/merge_catalog_metrics.py'
+      - 'tests/validate_release_current.py'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
   schedule:
@@ -45,7 +46,7 @@ jobs:
           python tests/validate_random50.py
           python tests/validate_10y.py
           python scripts/meta_validate_annual.py
-          python tests/validate_release.py
+          python tests/validate_release_current.py
           python tests/validate_release10.py
       - name: Publicar catálogo inteiro e rankings válidos
         run: |
