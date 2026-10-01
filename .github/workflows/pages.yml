@@ -4,6 +4,10 @@ on:
     branches: [main]
     paths:
       - 'scripts/ten_year_metrics.py'
+      - 'scripts/update_ui_rankings.py'
+      - 'scripts/apply_five_year_ui.py'
+      - 'scripts/fix_ui_cards.py'
+      - 'scripts/merge_catalog_metrics.py'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
   schedule:
